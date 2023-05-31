@@ -126,7 +126,6 @@ class PostProcessor():
         c_coord = np.array([0.25, 0.25])
          
         #Reference PDF should theorectically be the same every, grab at (0.5, 0.5)
-        import pdb;pdb.set_trace()
         ref_pdf = self._get_kde_pdf_at_coord(self.X, self.E_true, b_coord)
         
         a_pdf = self._get_kde_pdf_at_coord(self.X, self.E_gen, a_coord)
@@ -266,7 +265,6 @@ class PostProcessor():
                 cb = fig.colorbar(cs)
                 if vmin is not None and vmax is not None:
                     levels = MaxNLocator(nbins=9).tick_values(vmin, vmax)
-                    cb.set_clim(vmin, vmax)
 
             frame1 = plt.gca()
             frame1.axes.get_xaxis().set_visible(False)
