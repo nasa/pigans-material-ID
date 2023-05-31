@@ -17,8 +17,8 @@ from utilities.general import load_train_dataset
 
 TRAIN_DATA_FILE = Path("data/dataset_train.hdf5") #relative path to data
 
-BATCH_SIZE = 1000
-TRAINING_STEPS = 50000
+BATCH_SIZE = 10#00
+TRAINING_STEPS = 50#000
 LEARNING_RATE = 1e-4
 
 #Number of Generations Per Step
@@ -48,10 +48,14 @@ noise_sampler = NoiseSampler(NOISE_DIM)
 pde = PDE()
 boundary_conditions = BoundaryConditions(bc_data, noise_sampler)
 
-generator_optimizer = tf.keras.optimizers.Adam(lr=LEARNING_RATE, beta_1=0.0,
-                                               beta_2=0.9)
-discriminator_optimizer = tf.keras.optimizers.Adam(lr=LEARNING_RATE, 
-                                                   beta_1=0.0, beta_2=0.9)
+generator_optimizer = tf.keras.optimizers.legacy.Adam(
+                                                learning_rate=LEARNING_RATE,
+                                                beta_1=0.0,
+                                                beta_2=0.9)
+discriminator_optimizer = tf.keras.optimizers.legacy.Adam(
+                                                learning_rate=LEARNING_RATE, 
+                                                beta_1=0.0,
+                                                beta_2=0.9)
 
 generator = Generator(input_shape=GEN_INPUT_SHAPE, 
                       pde=pde, boundary_conditions=boundary_conditions, 
