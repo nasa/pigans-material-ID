@@ -1,2 +1,4 @@
 .idea/
 data/txt_files/test
+data/training_f*.h5
+venv
