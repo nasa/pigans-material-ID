@@ -21,16 +21,16 @@ class PIGAN():
         self.disc_log = []
         self.time_log = []
 
-        self.save_dir = Path("data/")
+        start_time = time.strftime("%b_%d_%H_%M_%s/",time.gmtime())
+        self.save_dir = Path("data") / start_time
+        writer_path = self.save_dir / "tensorboard" / start_time
+        self._writer = tf.summary.create_file_writer(str(writer_path))
 
     def train(self, inputs, dataset, training_steps, generator_iterations, 
-              discriminator_iterations):
-        log_dir = Path("data/tensorboard/")
-        writer_path = log_dir / time.strftime("%b_%d_%H_%M_%s/",time.gmtime())
-        writer = tf.summary.create_file_writer(str(writer_path))
+              discriminator_iterations, step=0):
         
         train_start_time = time.time()
-        for step in tqdm(range(training_steps), desc='Training'):
+        for step in tqdm(range(step, step + training_steps), desc='Training'):
             start = time.time()
             for batch in dataset:
                 batch_size = batch.shape[0]
@@ -41,9 +41,11 @@ class PIGAN():
                     self.disc_log.append(
                         {'step': (step * discriminator_iterations) + i + 1,
                          'disc_loss': disc_loss.numpy()})
-                    with writer.as_default():
-                        tf.summary.scalar('Discriminator Loss',disc_loss.numpy(), 
-                                           step = (step * discriminator_iterations) + i + 1)
+                    with self._writer.as_default():
+                        tf.summary.scalar(
+                            'Discriminator Loss',
+                            disc_loss.numpy(), 
+                            step = (step * discriminator_iterations) + i + 1)
 
                 for i in range(generator_iterations):
                     gen_loss, pde_loss, bc_loss = \
@@ -54,13 +56,19 @@ class PIGAN():
                          'gen_loss': gen_loss.numpy(),
                          'pde_loss': pde_loss.numpy(),
                          'bc_loss': bc_loss.numpy()})
-                    with writer.as_default():
-                        tf.summary.scalar('Generator Loss',gen_loss.numpy(), 
-                                           step = (step * generator_iterations) + i + 1)
-                        tf.summary.scalar('PDE Loss',pde_loss.numpy(), 
-                                           step = (step * generator_iterations) + i + 1)
-                        tf.summary.scalar('BC Loss',bc_loss.numpy(), 
-                                           step = (step * generator_iterations) + i + 1)
+                    with self._writer.as_default():
+                        tf.summary.scalar(
+                            'Generator Loss',
+                            gen_loss.numpy(), 
+                            step = (step * generator_iterations) + i + 1)
+                        tf.summary.scalar(
+                            'PDE Loss',
+                            pde_loss.numpy(), 
+                            step = (step * generator_iterations) + i + 1)
+                        tf.summary.scalar(
+                            'BC Loss',
+                            bc_loss.numpy(), 
+                            step = (step * generator_iterations) + i + 1)
 
 
             if (step + 1) % 50 == 0:
@@ -82,14 +90,19 @@ class PIGAN():
             elapsed_time =  time.time() - start
             self.time_log.append({'step': step + 1,
                                   'elapsed_time': elapsed_time})
-            with writer.as_default():
+            with self._writer.as_default():
                 tf.summary.scalar('Time Per Step', elapsed_time, step = step + 1)
 
+        return step
 
-    def save(self, logs=True,debug=False):
+
+    def save(self, logs=True, debug=False, subdir=False):
+        save_dir = self.save_dir
         if debug:
-            self.save_dir = self.save_dir.joinpath("debug/")
-        model_save_dir = self.save_dir.joinpath("models/")
+            save_dir = save_dir.joinpath("debug/")
+        if subdir:
+            save_dir = save_dir.joinpath(subdir)
+        model_save_dir = save_dir.joinpath("models/")
         model_save_dir.mkdir(parents=True, exist_ok=True)
         self.generator.save(model_save_dir)
         self.discriminator.save(model_save_dir)
