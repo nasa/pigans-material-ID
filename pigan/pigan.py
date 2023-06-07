@@ -173,10 +173,10 @@ class PIGAN():
             LEARNING_RATE = settings_file.attrs['learning_rate']
             generator_optimizer = tf.keras.optimizers.Adam(
                                                     learning_rate=LEARNING_RATE,
-                                                    beta_1=0.0,
+                                                    beta_1=0.1,
                                                     beta_2=0.9)
             discriminator_optimizer = tf.keras.optimizers.Adam(
-                learning_rate=LEARNING_RATE, beta_1=0.0, beta_2=0.9)
+                learning_rate=LEARNING_RATE, beta_1=0.1, beta_2=0.9)
             self.generator = Generator(
                 input_shape=int(settings_file.attrs['gen_input_shape']),
                 #pde=pde, boundary_conditions=boundary_conditions,
