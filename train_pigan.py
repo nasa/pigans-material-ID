@@ -2,9 +2,11 @@
 Created on Wed Jan 29 15:52:51 2020
 
 @author: tlewitt
+
 """
 from pathlib import Path
 import tensorflow as tf
+import time
 
 
 from pigan.pigan import PIGAN
@@ -15,10 +17,11 @@ from pigan.components.boundary_conditions import BoundaryConditions
 from pigan.components.noise_sampler import NoiseSampler
 from utilities.general import load_train_dataset
 
-TRAIN_DATA_FILE = Path("data/dataset_train.hdf5") #relative path to data
+TRAIN_DATA_FILE = Path("data/training_f8000.h5") #relative path to data
 
-BATCH_SIZE = 10#00
-TRAINING_STEPS = 50#000
+BATCH_SIZE = 85#00
+NUM_CHECKPOINTS = 25
+TRAINING_STEPS = 100#50000
 LEARNING_RATE = 1e-4
 
 #Number of Generations Per Step
@@ -68,8 +71,10 @@ discriminator = Discriminator(input_shape=DISC_INPUT_SHAPE, LAMBDA=LAMBDA,
 
 pigan = PIGAN(generator=generator, discriminator=discriminator)
 
-pigan.train(inputs=train_data, dataset=batched_dataset,
-            training_steps=TRAINING_STEPS, generator_iterations=GEN_ITERS, 
-            discriminator_iterations=DISC_ITERS)
+step = 0
+for i in range(NUM_CHECKPOINTS):
+    step = pigan.train(inputs=train_data, dataset=batched_dataset,
+                training_steps=TRAINING_STEPS, generator_iterations=GEN_ITERS, 
+                discriminator_iterations=DISC_ITERS, step=step)
 
-pigan.save()
+    pigan.save(subdir='chkpt{:04}'.format(i))
