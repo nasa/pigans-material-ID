@@ -2,6 +2,7 @@ import tensorflow as tf
 
 
 class BoundaryConditions():
+
     def __init__(self, boundary_conditions, noise_sampler):
 
         self.boundary_conditions = boundary_conditions
@@ -15,29 +16,30 @@ class BoundaryConditions():
         nu = 0.3
         num_bc = 100
 
-        bc_right_loss = self._right_boundary_loss(generator_u,
-                                                        generator_E, tape,
-                                                        nu, num_bc)
+        bc_right_loss = self._sigma_boundary_loss(generator_u,
+                                                  generator_E, tape,
+                                                  nu, num_bc)
         bc_top_loss = self._top_boundary_loss(generator_u, generator_E,
-                                                    tape, nu, num_bc)
+                                              tape, nu, num_bc)
         bc_bottom_loss = self._bottom_boundary_loss(generator_u, 
-                                                          generator_E,
-                                                          tape, nu, num_bc)
-        bc_left_loss = self._left_boundary_loss(generator_u,generator_E, tape, 
-                                                nu, num_bc)
+                                                    generator_E,
+                                                    tape, nu, num_bc)
+        bc_left_loss = self._u_boundary_loss(generator_u,generator_E, tape, 
+                                             nu, num_bc)
 
         bc_loss = bc_right_loss + bc_top_loss + bc_bottom_loss + bc_left_loss
 
         return bc_loss
-    def _left_boundary_loss(self, generator_u, generator_E, tape, nu, num_bc):
+
+    def _u_boundary_loss(self, generator_u, generator_E, tape, nu, num_bc):
         '''
         Combines output from equations 21 and 22 to calculate
         boundary condition on the left boundary of the domain
         '''
         
-        X_ux_bc = self.boundary_conditions['X_ux_bc']
+        X_ux_bc = self.boundary_conditions['X_u_bc']
         n_ux_sens = X_ux_bc.shape[0]
-        ux_bc = self.boundary_conditions['ux_bc']
+        ux_bc = tf.zeros((n_ux_sens, 1))
         ux_expected_vals = tf.tile(ux_bc, [num_bc, 1])
         noise_u_bc = self.noise_sampler.sample_noise(num_sensors=n_ux_sens,
                                                      batch_size=num_bc)
@@ -52,12 +54,13 @@ class BoundaryConditions():
         generated_uy_bc_at_origin=tf.gather(generated_uy_bc,tile_indicies)
         uy_expected_vals=tf.zeros_like(generated_uy_bc_at_origin)
         
-        u_boundary_evaluation=tf.concat((generated_ux_bc,generated_uy_bc_at_origin),0)
+        u_boundary_evaluation=tf.concat((generated_ux_bc,
+                                         generated_uy_bc_at_origin),0)
         expected_vals=tf.concat((ux_expected_vals,uy_expected_vals),0)
         loss= self.mse(u_boundary_evaluation,expected_vals)
         return loss
 
-    def _right_boundary_loss(self, generator_u, generator_E, tape, nu, 
+    def _sigma_boundary_loss(self, generator_u, generator_E, tape, nu, 
                                    num_bc):
         '''
         Combines output from equations 28 and 29 to calculate
@@ -68,8 +71,9 @@ class BoundaryConditions():
         n_sig_sens = X_sigma_bc.shape[0]
         sigma_bc = self.boundary_conditions['sigma_bc']
         sigma_bc = tf.tile(sigma_bc, [num_bc, 1])
-        zero_bc = self.boundary_conditions['sigma_zero']
-        zero_bc = tf.tile(zero_bc, [num_bc, 1])
+        #zero_bc = self.boundary_conditions['sigma_zero']
+        #zero_bc = tf.tile(zero_bc, [num_bc, 1])
+        zero_bc = tf.zeros_like(sigma_bc)
 
         noise_sigma_bc = self.noise_sampler.sample_noise(
                 num_sensors=n_sig_sens, batch_size=num_bc)
@@ -101,7 +105,8 @@ class BoundaryConditions():
         Returns boundary loss on top boundary of domain
         '''
         X_sigma_bc = self.boundary_conditions['X_sigma_hi']
-        zero_bc = self.boundary_conditions['sigma_zero']
+
+        zero_bc = tf.zeros((X_sigma_bc.shape[0], 1))
         zero_bc = tf.tile(zero_bc, [num_bc, 1])
 
         gen_sigma_yy, gen_sigma_xy = self._get_sigma_yy_xy_on_boundary(
@@ -121,7 +126,7 @@ class BoundaryConditions():
         Returns boundary loss on bottom boundary of domain
         '''
         X_sigma_bc = self.boundary_conditions['X_sigma_lo']
-        zero_bc = self.boundary_conditions['sigma_zero']
+        zero_bc = tf.zeros((X_sigma_bc.shape[0], 1))
         zero_bc = tf.tile(zero_bc, [num_bc, 1])
 
         gen_sigma_yy, gen_sigma_xy = self._get_sigma_yy_xy_on_boundary(
@@ -199,7 +204,3 @@ class BoundaryConditions():
         factor = 1. + nu
         sigma_xy = (1/factor) * E * 0.5 * (dux_dy + duy_dx)
         return sigma_xy
-        
-
-    
-
