@@ -48,27 +48,28 @@ class PIGAN():
                             step = (step * discriminator_iterations) + i + 1)
 
                 for i in range(generator_iterations):
-                    gen_loss, pde_loss, bc_loss = \
+                    #gen_loss, pde_loss, bc_loss = 
+                    gen_loss = \
                         self.generator.step(inputs, self.discriminator,
                                             batch_size=batch.shape[0])
                     self.gen_log.append(
                         {'step': (step * generator_iterations) + i + 1,
-                         'gen_loss': gen_loss.numpy(),
-                         'pde_loss': pde_loss.numpy(),
-                         'bc_loss': bc_loss.numpy()})
+                         'gen_loss': gen_loss.numpy(),})
+                         #'pde_loss': pde_loss.numpy(),
+                         #'bc_loss': bc_loss.numpy()})
                     with self._writer.as_default():
                         tf.summary.scalar(
                             'Generator Loss',
                             gen_loss.numpy(), 
                             step = (step * generator_iterations) + i + 1)
-                        tf.summary.scalar(
-                            'PDE Loss',
-                            pde_loss.numpy(), 
-                            step = (step * generator_iterations) + i + 1)
-                        tf.summary.scalar(
-                            'BC Loss',
-                            bc_loss.numpy(), 
-                            step = (step * generator_iterations) + i + 1)
+                        #tf.summary.scalar(
+                        #    'PDE Loss',
+                        #    pde_loss.numpy(), 
+                        #    step = (step * generator_iterations) + i + 1)
+                        #tf.summary.scalar(
+                        #    'BC Loss',
+                        #    bc_loss.numpy(), 
+                        #    step = (step * generator_iterations) + i + 1)
 
 
             if (step + 1) % 50 == 0:
@@ -83,8 +84,8 @@ class PIGAN():
                          output_stream=sys.stdout)
                 tf.print("Generator Loss: ", gen_loss,
                          output_stream=sys.stdout)
-                tf.print("PDE Loss: ", pde_loss, output_stream=sys.stdout)
-                tf.print("BC Loss: ", bc_loss, output_stream=sys.stdout)
+                #tf.print("PDE Loss: ", pde_loss, output_stream=sys.stdout)
+                #tf.print("BC Loss: ", bc_loss, output_stream=sys.stdout)
 
 
             elapsed_time =  time.time() - start
@@ -150,13 +151,16 @@ class PIGAN():
             An array with shape: [num_samples, number of points/coordinates,
             dimensionality]
         """
-        gen_U, gen_E = self.generator.generate(test_data, num_samples)
-        E = gen_E[:, :, 0].numpy()
+        #gen_U, gen_E = self.generator.generate(test_data, num_samples)
+        gen_U = self.generator.generate(test_data, num_samples)
+        #E = gen_E[:, :, 0].numpy()
         ux = gen_U[:, :, 0].numpy()
         uy = gen_U[:, :, 1].numpy()
         if save_results:
-            save_samples(gen_E, gen_U, test_data,Path("data/generated_snapshots.hdf5"))
-        return E, ux, uy
+            #save_samples(gen_E, gen_U, test_data,Path("data/generated_snapshots.hdf5"))
+            save_samples(gen_U, test_data,Path("data/generated_snapshots.hdf5"))
+        #return E, ux, uy
+        return ux, uy
     
     def load(self, model_dir):
 
@@ -175,7 +179,7 @@ class PIGAN():
                 learning_rate=LEARNING_RATE, beta_1=0.0, beta_2=0.9)
             self.generator = Generator(
                 input_shape=int(settings_file.attrs['gen_input_shape']),
-                pde=pde, boundary_conditions=boundary_conditions,
+                #pde=pde, boundary_conditions=boundary_conditions,
                 optimizer=generator_optimizer, noise_sampler=noise_sampler)
 
             self.discriminator = Discriminator(

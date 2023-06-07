@@ -108,7 +108,8 @@ if __name__ == '__main__':
                          np.linspace(0.25, 0.75, 50))
     x = np.c_[xx_gen.ravel(), yy_gen.ravel()].astype('float32')
     outputs = trained_model.generate(x, NUM_PREDICT_SAMPLES, SAVE_RESULTS)
-    labels = ['E', 'u1', 'u2']
+    #labels = ['E', 'u1', 'u2']
+    labels = ['u1', 'u2']
     output_dict = {label: out.reshape(out.shape[0], *xx_gen.shape) \
                 for label, out in zip(labels, outputs)}
     plot_mean_std_contour( xx_gen, yy_gen, output_dict, 'gen_contours')

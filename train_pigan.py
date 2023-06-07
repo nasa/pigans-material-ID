@@ -20,8 +20,8 @@ from utilities.general import load_train_dataset
 TRAIN_DATA_FILE = Path("data/training_f8000.h5") #relative path to data
 
 BATCH_SIZE = 85#00
-NUM_CHECKPOINTS = 25
-TRAINING_STEPS = 100#50000
+NUM_CHECKPOINTS = 20
+TRAINING_STEPS = 500#50000
 LEARNING_RATE = 1e-4
 
 #Number of Generations Per Step
@@ -48,8 +48,8 @@ batched_dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
 
 #Initialize All PIGAN 
 noise_sampler = NoiseSampler(NOISE_DIM)
-pde = PDE()
-boundary_conditions = BoundaryConditions(bc_data, noise_sampler)
+#pde = PDE()
+#boundary_conditions = BoundaryConditions(bc_data, noise_sampler)
 
 generator_optimizer = tf.keras.optimizers.legacy.Adam(
                                                 learning_rate=LEARNING_RATE,
@@ -61,7 +61,7 @@ discriminator_optimizer = tf.keras.optimizers.legacy.Adam(
                                                 beta_2=0.9)
 
 generator = Generator(input_shape=GEN_INPUT_SHAPE, 
-                      pde=pde, boundary_conditions=boundary_conditions, 
+                      #pde=pde, boundary_conditions=boundary_conditions, 
                       optimizer=generator_optimizer, 
                       noise_sampler=noise_sampler)
 
