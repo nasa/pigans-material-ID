@@ -135,8 +135,8 @@ class Generator():
             total_loss = gen_loss + pde_loss + bc_loss
 
         gradients_of_generators = gen_tape.gradient(total_loss,
-                                                    [self.generator_u.trainable_variables,
-                                                     self.generator_E.trainable_variables])
+                                         [self.generator_u.trainable_variables,
+                                          self.generator_E.trainable_variables])
 
         self.gen_opt.apply_gradients(zip(gradients_of_generators[0],
                                          self.generator_u.trainable_variables))
