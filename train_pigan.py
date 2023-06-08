@@ -7,6 +7,7 @@ Created on Wed Jan 29 15:52:51 2020
 from pathlib import Path
 import tensorflow as tf
 import time
+import math
 
 
 from pigan.pigan import PIGAN
@@ -21,8 +22,8 @@ TRAIN_DATA_FILE = Path("data/training_f8000.h5") #relative path to data
 
 BATCH_SIZE = 85#00
 NUM_CHECKPOINTS = 20
-TRAINING_STEPS = 500#50000
-LEARNING_RATE = 1e-4
+TRAINING_STEPS = 100000 #50000
+LEARNING_RATE = 1e-6
 
 #Number of Generations Per Step
 DISC_ITERS = 1
@@ -53,11 +54,11 @@ noise_sampler = NoiseSampler(NOISE_DIM)
 
 generator_optimizer = tf.keras.optimizers.legacy.Adam(
                                                 learning_rate=LEARNING_RATE,
-                                                beta_1=0.0,
+                                                beta_1=0.1,
                                                 beta_2=0.9)
 discriminator_optimizer = tf.keras.optimizers.legacy.Adam(
                                                 learning_rate=LEARNING_RATE, 
-                                                beta_1=0.0,
+                                                beta_1=0.1,
                                                 beta_2=0.9)
 
 generator = Generator(input_shape=GEN_INPUT_SHAPE, 
@@ -72,9 +73,13 @@ discriminator = Discriminator(input_shape=DISC_INPUT_SHAPE, LAMBDA=LAMBDA,
 pigan = PIGAN(generator=generator, discriminator=discriminator)
 
 step = 0
+training_steps_per_chkpt = math.ceil(TRAINING_STEPS / NUM_CHECKPOINTS)
 for i in range(NUM_CHECKPOINTS):
-    step = pigan.train(inputs=train_data, dataset=batched_dataset,
-                training_steps=TRAINING_STEPS, generator_iterations=GEN_ITERS, 
-                discriminator_iterations=DISC_ITERS, step=step)
+    step = pigan.train(inputs=train_data,
+                       dataset=batched_dataset,
+                       training_steps=training_steps_per_chkpt,
+                       generator_iterations=GEN_ITERS, 
+                       discriminator_iterations=DISC_ITERS,
+                       step=step)
 
     pigan.save(subdir='chkpt{:04}'.format(i))
