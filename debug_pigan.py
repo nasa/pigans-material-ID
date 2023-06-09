@@ -13,8 +13,9 @@ from utilities.general import load_train_dataset
 
 #----------Input Parameters---------------#
 #File Locatiions
-MODEL_DIR = Path(sys.argv[1]) if sys.argv[1] else Path("data/models/")
-TRAIN_FILE = Path("data/training_f8000.h5") #relative path to data
+nargs = len(sys.argv)
+MODEL_DIR = Path(sys.argv[1] if nargs == 2 else "data/models/")
+TRAIN_FILE = Path(sys.argv[2] if nargs == 3 else "data/training_f8000.h5")
 
 #Toggles saving generated data
 SAVE_RESULTS = False
@@ -68,8 +69,8 @@ def plot_samples(xx, yy, outputs, xx_data, yy_data, data, filesuffix):
             'x': qoi[:, int(qoi.shape[1] / 2), :],
             'y': qoi[:, :, int(qoi.shape[2] / 2)]}
         qoi_pos_slices = {
-            'x': xx[int(qoi.shape[1] / 2), :],
-            'y': yy[:, int(qoi.shape[2] / 2)]}
+            'x': xx[int(xx.shape[0] / 2), :],
+            'y': yy[:, int(yy.shape[1] / 2)]}
 
         if label in data.keys():
             data_slices = {
@@ -104,8 +105,15 @@ def plot_samples(xx, yy, outputs, xx_data, yy_data, data, filesuffix):
 
 
 if __name__ == '__main__':
-    xx_gen, yy_gen = np.meshgrid(np.linspace(0.25, 1.75, 100),
-                         np.linspace(0.25, 0.75, 50))
+    x_dim = len(set(train_data['X_u'].numpy()[:, 0]))
+    y_dim = len(set(train_data['X_u'].numpy()[:, 1]))
+    xx = train_data['X_u'].numpy()[:, 0].reshape(x_dim, y_dim)
+    yy = train_data['X_u'].numpy()[:, 1].reshape(x_dim, y_dim)
+    x_bounds = (xx.min(), xx.max())
+    y_bounds = (yy.min(), yy.max())
+
+    xx_gen, yy_gen = np.meshgrid(np.linspace(*x_bounds, 100),
+                         np.linspace(*y_bounds, 50))
     x = np.c_[xx_gen.ravel(), yy_gen.ravel()].astype('float32')
     outputs = trained_model.generate(x, NUM_PREDICT_SAMPLES, SAVE_RESULTS)
     #labels = ['E', 'u1', 'u2']
@@ -114,10 +122,6 @@ if __name__ == '__main__':
                 for label, out in zip(labels, outputs)}
     plot_mean_std_contour( xx_gen, yy_gen, output_dict, 'gen_contours')
 
-    x_dim = len(set(train_data['X_u'].numpy()[:, 0]))
-    y_dim = len(set(train_data['X_u'].numpy()[:, 1]))
-    xx = train_data['X_u'].numpy()[:, 0].reshape(x_dim, y_dim)
-    yy = train_data['X_u'].numpy()[:, 1].reshape(x_dim, y_dim)
     n_sens = train_data['Num_U_Sensors']
     data = {
        'u1': train_data['snapshots'].numpy()[:, :n_sens].reshape(-1, *xx.shape),
