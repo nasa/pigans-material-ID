@@ -23,7 +23,7 @@ class PIGAN():
 
         start_time = time.strftime("%b_%d_%H_%M_%s/",time.gmtime())
         self.save_dir = Path("data") / start_time
-        writer_path = self.save_dir / "tensorboard" / start_time
+        writer_path = self.save_dir / "tensorboard"
         self._writer = tf.summary.create_file_writer(str(writer_path))
 
     def train(self, inputs, dataset, training_steps, generator_iterations, 
