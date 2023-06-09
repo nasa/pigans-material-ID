@@ -8,6 +8,7 @@ from pathlib import Path
 import tensorflow as tf
 import time
 import math
+import sys
 
 
 from pigan.pigan import PIGAN
@@ -20,10 +21,10 @@ from utilities.general import load_train_dataset
 
 TRAIN_DATA_FILE = Path("data/training_f8000.h5") #relative path to data
 
-BATCH_SIZE = 85#00
-NUM_CHECKPOINTS = 20
-TRAINING_STEPS = 100000 #50000
-LEARNING_RATE = 1e-6
+BATCH_SIZE = int(sys.argv[1])#85#00
+NUM_CHECKPOINTS = 160
+TRAINING_STEPS = 800000 #50000
+LEARNING_RATE = 1e-4
 
 #Number of Generations Per Step
 DISC_ITERS = 1
@@ -82,4 +83,4 @@ for i in range(NUM_CHECKPOINTS):
                        discriminator_iterations=DISC_ITERS,
                        step=step)
 
-    pigan.save(subdir='chkpt{:04}'.format(i))
+    pigan.save(subdir='chkpt{:04}_'.format(i) + sys.argv[1])
