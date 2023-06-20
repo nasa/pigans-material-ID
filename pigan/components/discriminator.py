@@ -145,6 +145,8 @@ class Discriminator():
             functools.partial(self.discriminator, training=True),
             real_snapshots, generated_snapshots, batch_size)
 
+        print('disc loss = {wgan_disc_loss}')
+        print('grad penalty loss (unweighted) = {gp}')
         disc_loss = wgan_disc_loss + (gp * self.LAMBDA)
 
         return disc_loss
