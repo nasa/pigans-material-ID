@@ -12,17 +12,29 @@ from pigan.components.generator import Generator
 from pigan.components.noise_sampler import NoiseSampler
 from pigan.components.pde import PDE
 from utilities.general import save_log, save_samples
+from plotting import plot_progress
 
 class PIGAN():
-    def __init__(self, generator=None, discriminator=None):
+    def __init__(self, generator=None, discriminator=None, parentdir=None,
+                 subdir=None):
         self.generator = generator
         self.discriminator = discriminator
         self.gen_log = []
         self.disc_log = []
         self.time_log = []
 
-        start_time = time.strftime("%b_%d_%H_%M_%s/",time.gmtime())
-        self.save_dir = Path("data") / start_time
+        if parentdir is None:
+            parentdir = "data"
+
+        parentdir = Path(parentdir)
+        parentdir.mkdir(exist_ok=True)
+
+        if subdir:
+            self.save_dir = parentdir / subdir
+        else:
+            start_time = time.strftime("%b_%d_%H_%M_%s/",time.gmtime())
+            self.save_dir = parentdir / start_time
+
         writer_path = self.save_dir / "tensorboard"
         self._writer = tf.summary.create_file_writer(str(writer_path))
 
@@ -57,11 +69,11 @@ class PIGAN():
                          'gen_loss': gen_loss.numpy(),})
                          #'pde_loss': pde_loss.numpy(),
                          #'bc_loss': bc_loss.numpy()})
-                    with self._writer.as_default():
-                        tf.summary.scalar(
-                            'Generator Loss',
-                            gen_loss.numpy(), 
-                            step = (step * generator_iterations) + i + 1)
+                    #with self._writer.as_default():
+                    #    tf.summary.scalar(
+                    #        'Generator Loss',
+                    #        gen_loss.numpy(), 
+                    #        step = (step * generator_iterations) + i + 1)
                         #tf.summary.scalar(
                         #    'PDE Loss',
                         #    pde_loss.numpy(), 
@@ -71,8 +83,17 @@ class PIGAN():
                         #    bc_loss.numpy(), 
                         #    step = (step * generator_iterations) + i + 1)
 
+                    # HACK : WRITE GEN ONCE, CUT DOWN ON GEN VALS
+                    if i == 0:
+                        with self._writer.as_default():
+                            tf.summary.scalar(
+                                'Generator Loss',
+                                gen_loss.numpy(), 
+                                step = (step * generator_iterations) + i + 1)
 
-            if (step + 1) % 50 == 0:
+
+
+            if (step + 1) % 50000 == 0:
                 elapsed_time = time.time() - train_start_time
                 sec_per_step = elapsed_time / step
                 mins_left = ((training_steps - step) * sec_per_step)
@@ -87,6 +108,12 @@ class PIGAN():
                 #tf.print("PDE Loss: ", pde_loss, output_stream=sys.stdout)
                 #tf.print("BC Loss: ", bc_loss, output_stream=sys.stdout)
 
+                bufs = plot_progress(inputs['X_u'], batch, self.generator)
+                for i, b in enumerate(bufs):
+                    image = tf.image.decode_png(b.getvalue(), channels=4)
+                    image = tf.expand_dims(image, 0)
+                    with self._writer.as_default():
+                        tf.summary.image(f"plot_{i}", image, step=step)
 
             elapsed_time =  time.time() - start
             self.time_log.append({'step': step + 1,
