@@ -23,13 +23,13 @@ TRAIN_DATA_FILE = Path(sys.argv[1])
 BATCH_SIZE = int(sys.argv[2])
 NOISE_DIM = int(sys.argv[3])
 GEN_ITERS = int(sys.argv[4])
-LAMBDA = float(sys.argv[5]) # gradpen
+DISC_ITERS = int(sys.argv[5])
+LAMBDA = float(sys.argv[6]) # gradpen
 
 PARENT_DIR = '/hpnobackup2/pleser/pigans'
-SUB_DIR = f'{TRAIN_DATA_FILE.stem}_{BATCH_SIZE}_{NOISE_DIM}_{GEN_ITERS}_{LAMBDA}'
+SUB_DIR = f'{TRAIN_DATA_FILE.stem}_b{BATCH_SIZE}_n{NOISE_DIM}_g{GEN_ITERS}_d{DISC_ITERS}_gp{LAMBDA}'
 
-DISC_ITERS = 1
-NUM_CHECKPOINTS = 20
+NUM_CHECKPOINTS = 10
 TRAINING_STEPS = 1000000 #50000
 LEARNING_RATE = 1e-4
 
@@ -71,7 +71,7 @@ discriminator = Discriminator(input_shape=DISC_INPUT_SHAPE, LAMBDA=LAMBDA,
 pigan = PIGAN(generator=generator, discriminator=discriminator,
               parentdir=PARENT_DIR, subdir=SUB_DIR)
 
-step = 0
+step = -1
 training_steps_per_chkpt = math.ceil(TRAINING_STEPS / NUM_CHECKPOINTS)
 for i in range(NUM_CHECKPOINTS):
     step = pigan.train(inputs=train_data,
@@ -79,7 +79,7 @@ for i in range(NUM_CHECKPOINTS):
                        training_steps=training_steps_per_chkpt,
                        generator_iterations=GEN_ITERS, 
                        discriminator_iterations=DISC_ITERS,
-                       step=step)
+                       step=step + 1)
 
     pigan.save(subdir='chkpt{:04}'.format(i))
 pigan.save()
