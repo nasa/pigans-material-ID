@@ -19,22 +19,19 @@ from pigan.components.boundary_conditions import BoundaryConditions
 from pigan.components.noise_sampler import NoiseSampler
 from utilities.general import load_train_dataset
 
-TRAIN_DATA_FILE = Path("data/training_f8000.h5") #relative path to data
+TRAIN_DATA_FILE = Path(sys.argv[1])
+BATCH_SIZE = int(sys.argv[2])
+NOISE_DIM = int(sys.argv[3])
+GEN_ITERS = int(sys.argv[4])
+LAMBDA = float(sys.argv[5]) # gradpen
 
-BATCH_SIZE = int(sys.argv[1])#85#00
-NUM_CHECKPOINTS = 160
-TRAINING_STEPS = 800000 #50000
-LEARNING_RATE = 1e-4
+PARENT_DIR = '/hpnobackup2/pleser/pigans'
+SUB_DIR = f'{TRAIN_DATA_FILE.stem}_{BATCH_SIZE}_{NOISE_DIM}_{GEN_ITERS}_{LAMBDA}'
 
-#Number of Generations Per Step
 DISC_ITERS = 1
-GEN_ITERS = 5
-
-#Hyperparameter for weighting Gradient Penalty
-LAMBDA = 0.1
-
-#Number of Additional Nosie Dimensions
-NOISE_DIM = 5
+NUM_CHECKPOINTS = 20
+TRAINING_STEPS = 1000000 #50000
+LEARNING_RATE = 1e-4
 
 GEN_INPUT_SHAPE =  NOISE_DIM + 2
 
@@ -71,7 +68,8 @@ discriminator = Discriminator(input_shape=DISC_INPUT_SHAPE, LAMBDA=LAMBDA,
                               optimizer=discriminator_optimizer, 
                               noise_sampler=noise_sampler)
 
-pigan = PIGAN(generator=generator, discriminator=discriminator)
+pigan = PIGAN(generator=generator, discriminator=discriminator,
+              parentdir=PARENT_DIR, subdir=SUB_DIR)
 
 step = 0
 training_steps_per_chkpt = math.ceil(TRAINING_STEPS / NUM_CHECKPOINTS)
@@ -83,4 +81,5 @@ for i in range(NUM_CHECKPOINTS):
                        discriminator_iterations=DISC_ITERS,
                        step=step)
 
-    pigan.save(subdir='chkpt{:04}_'.format(i) + sys.argv[1])
+    pigan.save(subdir='chkpt{:04}'.format(i))
+pigan.save()
