@@ -93,7 +93,7 @@ class PIGAN():
 
 
 
-            if (step + 1) % 50000 == 0:
+            if (step + 1) % 1000 == 0:
                 elapsed_time = time.time() - train_start_time
                 sec_per_step = elapsed_time / step
                 mins_left = ((training_steps - step) * sec_per_step)
