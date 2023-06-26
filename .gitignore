@@ -1,6 +1,6 @@
 .idea/
 data/txt_files/test
-data/training_f*.h5
+data/training_*.h5
 venv
 *__pycache__*
 data/tensorboard*
@@ -8,3 +8,5 @@ data/tensorboard*
 data/logs
 data/models
 data/generated_snapshots.hdf5
+*.log
+*.err
