@@ -47,8 +47,8 @@ batched_dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
 
 #Initialize All PIGAN 
 noise_sampler = NoiseSampler(NOISE_DIM)
-#pde = PDE()
-#boundary_conditions = BoundaryConditions(bc_data, noise_sampler)
+pde = PDE()
+boundary_conditions = BoundaryConditions(bc_data, noise_sampler)
 
 generator_optimizer = tf.keras.optimizers.legacy.Adam(
                                                 learning_rate=LEARNING_RATE,
@@ -60,7 +60,7 @@ discriminator_optimizer = tf.keras.optimizers.legacy.Adam(
                                                 beta_2=0.9)
 
 generator = Generator(input_shape=GEN_INPUT_SHAPE, 
-                      #pde=pde, boundary_conditions=boundary_conditions, 
+                      pde=pde, boundary_conditions=boundary_conditions, 
                       optimizer=generator_optimizer, 
                       noise_sampler=noise_sampler)
 

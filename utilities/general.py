@@ -61,8 +61,7 @@ def load_train_dataset(filename):
         
         return train_data, boundary_data
 
-#def save_samples(E, U, X, save_file):
-def save_samples(U, X, save_file):
+def save_samples(E, U, X, save_file):
     '''
     Saves generated samples from generator at intermediate and final training checkpoints
     
@@ -77,7 +76,7 @@ def save_samples(U, X, save_file):
 
         samples_group.create_dataset('X', data=X)
         samples_group.create_dataset('generated_u', data=U.numpy())
-        #samples_group.create_dataset('generated_E', data=E.numpy())
+        samples_group.create_dataset('generated_E', data=E.numpy())
 def random_idxs(idxs, num_to_choose):
     '''
     Returns a sorted list of indexes to use

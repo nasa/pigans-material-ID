@@ -44,7 +44,7 @@ class Generator():
         Saves the generators' models.
     """
 
-    def __init__(self, input_shape, #pde, boundary_conditions,
+    def __init__(self, input_shape, pde, boundary_conditions,
                  optimizer, noise_sampler):
         """
         Parameters
@@ -68,18 +68,18 @@ class Generator():
         self.input_shape = input_shape
 
         self.generator_u = self._model(input_shape, 2)
-        #self.generator_E = self._model(input_shape, 1)
+        self.generator_E = self._model(input_shape, 1)
 
         self.gen_opt = optimizer
         self.noise_sampler = noise_sampler
-        #self.pde = pde
-        #self.boundary_conditions = boundary_conditions
+        self.pde = pde
+        self.boundary_conditions = boundary_conditions
 
     def __call__(self, gen_input, noise):
         u_pred = self.generator_u(tf.concat([gen_input, noise], axis=1))
-        #E_pred = self.generator_E(tf.concat([gen_input, noise], axis=1))
+        E_pred = self.generator_E(tf.concat([gen_input, noise], axis=1))
 
-        return u_pred#, E_pred
+        return u_pred, E_pred
 
     @tf.function
     def step(self, inputs, discriminator, batch_size):
@@ -106,47 +106,46 @@ class Generator():
 
         with tf.GradientTape(persistent=True) as gen_tape:
             X_u = inputs['X_u']
-            #X_f = inputs['X_f']
+            X_f = inputs['X_f']
 
             X_u_g = tf.tile(X_u, [batch_size, 1])
 
             noise_u = self.noise_sampler.sample_noise(X_u.shape[0], batch_size)
-            #noise_f = self.noise_sampler.sample_noise(X_f.shape[0], num_pde)
+            noise_f = self.noise_sampler.sample_noise(X_f.shape[0], num_pde)
 
             u_inputs = tf.concat([X_u_g, noise_u], axis=1)
             generated_u = self.generator_u(u_inputs, training=True)
             generated_snapshots = tf.reshape(generated_u, [batch_size, -1])
 
 
-            #X_f_g = tf.tile(X_f, [num_pde, 1])
-            #gen_tape.watch(X_f_g)
-            #u_f_inputs = tf.concat([X_f_g, noise_f], axis=1)
-            #generated_f_u = self.generator_u(u_f_inputs, training=True)
-            #E_f_inputs = tf.concat([X_f_g, noise_f], axis=1)
-            #generated_f_E = self.generator_E(E_f_inputs , training=True)
+            X_f_g = tf.tile(X_f, [num_pde, 1])
+            gen_tape.watch(X_f_g)
+            u_f_inputs = tf.concat([X_f_g, noise_f], axis=1)
+            generated_f_u = self.generator_u(u_f_inputs, training=True)
+            E_f_inputs = tf.concat([X_f_g, noise_f], axis=1)
+            generated_f_E = self.generator_E(E_f_inputs , training=True)
 
             fake_output = discriminator.discriminator(generated_snapshots,
                                                       training=True)
 
-            #gen_loss, pde_loss, bc_loss = self._loss(fake_output, gen_tape,
-            #                                         X=X_f_g, u=generated_f_u,
-            #                                         E=generated_f_E)
-            gen_loss = self._loss(fake_output, gen_tape)
+            gen_loss, pde_loss, bc_loss = self._loss(fake_output, gen_tape,
+                                                     X=X_f_g, u=generated_f_u,
+                                                     E=generated_f_E)
 
-            total_loss = gen_loss# + pde_loss + bc_loss
+            total_loss = gen_loss + pde_loss + bc_loss
 
         gradients_of_generators = gen_tape.gradient(total_loss,
-                                         [self.generator_u.trainable_variables,])
-                                          #self.generator_E.trainable_variables])
+                                         [self.generator_u.trainable_variables,
+                                          self.generator_E.trainable_variables])
 
         self.gen_opt.apply_gradients(zip(gradients_of_generators[0],
                                          self.generator_u.trainable_variables))
-        #self.gen_opt.apply_gradients(zip(gradients_of_generators[1],
-        #                                 self.generator_E.trainable_variables))
+        self.gen_opt.apply_gradients(zip(gradients_of_generators[1],
+                                         self.generator_E.trainable_variables))
 
         del gen_tape
 
-        return gen_loss#, pde_loss, bc_loss
+        return gen_loss, pde_loss, bc_loss
 
     def _loss(self, fake_output, tape, **terms):
         """Calculates the loss for the generator based on Equation 2 from 
@@ -171,10 +170,10 @@ class Generator():
             PDE constraint evaluation.
         """
         wgan_gen_loss = -tf.reduce_mean(fake_output)
-        #pde_loss = self.pde.evaluate_loss(terms, tape)
-        #bc_loss = self.boundary_conditions.evaluate_loss(self.generator_u,
-        #                                            self.generator_E, tape)
-        return wgan_gen_loss#, pde_loss, bc_loss
+        pde_loss = self.pde.evaluate_loss(terms, tape)
+        bc_loss = self.boundary_conditions.evaluate_loss(self.generator_u,
+                                                    self.generator_E, tape)
+        return wgan_gen_loss, pde_loss, bc_loss
 
     def _model(self, input_shape, dimensionality):
         """Creates a Sequential model (linear stack of layers).
@@ -243,12 +242,12 @@ class Generator():
         generated_u = tf.reshape(generated_u,
                                  [num_samples, X.shape[0], -1])
 
-        #E_inputs = tf.concat([X_g, noise], axis=1)
-        #generated_E = self.generator_E(E_inputs,training=False)
-        #                                               
-        #generated_E = tf.reshape(generated_E,[num_samples, X.shape[0], -1])
+        E_inputs = tf.concat([X_g, noise], axis=1)
+        generated_E = self.generator_E(E_inputs,training=False)
+                                                       
+        generated_E = tf.reshape(generated_E,[num_samples, X.shape[0], -1])
 
-        return generated_u#, generated_E
+        return generated_u, generated_E
     
 
     def save(self, save_dir):
@@ -260,7 +259,7 @@ class Generator():
             Path to the directory where the models will be saved.
         """
         self.generator_u.save(save_dir.joinpath('generator_u.h5'))
-        #self.generator_E.save(save_dir.joinpath('generator_E.h5'))
+        self.generator_E.save(save_dir.joinpath('generator_E.h5'))
 
     def load(self, model_dir):
         """Loads the generator models (architecture + weights) from hdf5 files using the load_model function from the Keras API.
@@ -272,6 +271,6 @@ class Generator():
         """
         self.generator_u = tf.keras.models.load_model(
                 model_dir.joinpath('generator_u.h5'), compile=False)
-        #self.generator_E = tf.keras.models.load_model(
-        #        model_dir.joinpath('generator_E.h5'), compile=False)
+        self.generator_E = tf.keras.models.load_model(
+                model_dir.joinpath('generator_E.h5'), compile=False)
 
