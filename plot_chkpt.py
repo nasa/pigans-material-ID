@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 
+from plotting import *
 from pathlib import Path
 from pigan.post_processing_scripts.PostProcessor import PostProcessor
 from pigan.pigan import PIGAN
@@ -50,22 +51,31 @@ for model_dir in set([f.parent for f in MODEL_DIR.glob('*.h5')]):
     labels = ['u1', 'u2']
     output_dict = {label: out.reshape(out.shape[0], *xx_gen.shape) \
                 for label, out in zip(labels, outputs)}
-    plot_mean_std_contour(xx_gen, yy_gen, output_dict,
-                          model_dir / 'gen_contours.png')
+    plot_mean_std_contour(xx_gen, yy_gen, output_dict)
+    plt.savefig(model_dir / 'gen_contours.png')
+    plt.close('all')
 
     n_sens = train_data['Num_U_Sensors']
+    xx = train_data['X_u'].numpy()[:, 0].reshape(*n_sens)
+    yy = train_data['X_u'].numpy()[:, 1].reshape(*n_sens)
+    zz = train_data['snapshots'].numpy().reshape(-1, *n_sens, 2)
     data = {
-       'u1':
-       train_data['snapshots'].numpy()[:, :n_sens].reshape(-1, *xx.shape),
-       'u2':
-       train_data['snapshots'].numpy()[:, n_sens:].reshape(-1, *xx.shape),
+       #'u1':
+       #train_data['snapshots'].numpy()[:, :n_sens].reshape(-1, *xx.shape),
+       #'u2':
+       #train_data['snapshots'].numpy()[:, n_sens:].reshape(-1, *xx.shape),
+        'u1': zz[:, :, :, 0],
+        'u2': zz[:, :, :, 1]
     }
     # have to rotate/flip because was lazy when writing swapped components
-    xx = np.fliplr(np.rot90(xx, 1))
-    yy = np.fliplr(np.rot90(yy, 1))
-    data['u1'] = np.flip(np.rot90(data['u1'], 1, axes=(1, 2)), axis=2)
-    data['u2'] = np.flip(np.rot90(data['u2'], 1, axes=(1, 2)), axis=2)
-    plot_mean_std_contour(xx, yy, data, model_dir / 'train_contours.png')
+    #xx = np.fliplr(np.rot90(xx, 1))
+    #yy = np.fliplr(np.rot90(yy, 1))
+    #data['u1'] = np.flip(np.rot90(data['u1'], 1, axes=(1, 2)), axis=2)
+    #data['u2'] = np.flip(np.rot90(data['u2'], 1, axes=(1, 2)), axis=2)
+    plot_mean_std_contour(xx, yy, data)
+    plt.savefig(model_dir / 'train_contours.png')
+    plt.close('all')
 
-    plot_samples(xx_gen, yy_gen, output_dict, xx, yy, data,
-                 model_dir / 'slices.png')
+    plot_samples(xx_gen, yy_gen, output_dict, xx, yy, data)
+    plt.savefig(model_dir / 'slices.png')
+    plt.close('all')

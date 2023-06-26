@@ -51,8 +51,8 @@ def plot_samples(xx, yy, outputs, xx_data, yy_data, data):
 
         if label in data.keys():
             data_slices = {
-                'x': data[label][:, int(data[label].shape[1] / 2), :],
-                'y': data[label][:, :, int(data[label].shape[2] / 2)]}
+                'y': data[label][:, int(data[label].shape[1] / 2), :],
+                'x': data[label][:, :, int(data[label].shape[2] / 2)]}
             data_pos_slices = {
                 'x': xx_data[int(xx_data.shape[0] / 2), :],
                 'y': yy_data[:, int(yy_data.shape[1] / 2)]}
@@ -90,8 +90,8 @@ def plot_progress(X_u, batch, trained_model):
 
     x_dim = len(set(X_u[:, 0]))
     y_dim = len(set(X_u[:, 1]))
-    xx = X_u[:, 0].reshape(x_dim, y_dim).T
-    yy = X_u[:, 1].reshape(x_dim, y_dim).T
+    xx = X_u[:, 0].reshape(y_dim, x_dim).T
+    yy = X_u[:, 1].reshape(y_dim, x_dim).T
     x_bounds = (xx.min(), xx.max())
     y_bounds = (yy.min(), yy.max())
 
@@ -105,10 +105,11 @@ def plot_progress(X_u, batch, trained_model):
                 for label, out in zip(labels, outputs)}
     buf1 = plot_mean_std_contour(xx_gen, yy_gen, output_dict)
 
-    n_sens = X_u.shape[0]
+    n_sens = xx.shape
+    zz = batch.reshape(-1, *n_sens, 2)
     data = {
-       'u1': batch[:, :n_sens].reshape(-1, *xx.shape),
-       'u2': batch[:, n_sens:].reshape(-1, *xx.shape),
+       'u1': zz[:, :, :, 0],
+       'u2': zz[:, :, :, 1]
     }
 
     buf2 = plot_samples(xx_gen, yy_gen, output_dict, xx, yy, data)
