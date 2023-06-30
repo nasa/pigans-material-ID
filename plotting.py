@@ -10,23 +10,28 @@ NUM_PREDICT_SAMPLES = 1000
 
 def plot_mean_std_contour(xx, yy, data):
 
-    fig, axes = plt.subplots(len(data.keys()), 2)
+    fig, axes = plt.subplots(*sorted([len(data.keys()), 2])[::-1])
+    axes = np.expand_dims(axes, 0) if len(axes.shape) == 1 else axes
 
     for i, (label, qoi)  in enumerate(data.items()):
+
+        ax = axes[i]
+
         mean = qoi.mean(axis=0)
         std = qoi.std(axis=0)
     
-        cs0 = axes[i, 0].contourf(xx, yy, mean)
-        axes[i, 0].set_title(label)
-        axes[i, 0].set_xlabel('x')
-        axes[i, 0].set_ylabel('y')
-        cb0 = fig.colorbar(cs0, ax=axes[i, 0])
+        cs0 = ax[0].contourf(xx, yy, mean)
+        ax[0].set_title(label)
+        ax[0].set_xlabel('x')
+        ax[0].set_ylabel('y')
+        cb0 = fig.colorbar(cs0, ax=ax[0])
         cb0.ax.set_ylabel('Mean')
     
-        cs1 = axes[i, 1].contourf(xx, yy, std)
-        axes[i, 1].set_xlabel('x')
-        axes[i, 1].set_ylabel('y')
-        cb1 = fig.colorbar(cs1, ax=axes[i, 1])
+        cs1 = ax[1].contourf(xx, yy, std)
+        ax[1].set_title(label)
+        ax[1].set_xlabel('x')
+        ax[1].set_ylabel('y')
+        cb1 = fig.colorbar(cs1, ax=ax[1])
         cb1.ax.set_ylabel('Std')
     
     plt.tight_layout()
@@ -38,7 +43,9 @@ def plot_mean_std_contour(xx, yy, data):
 
 def plot_samples(xx, yy, outputs, xx_data, yy_data, data):
 
-    fig, axes = plt.subplots(len(outputs.keys()), 2, figsize=[10, 10])
+    fig, axes = plt.subplots(*sorted([len(outputs.keys()), 2])[::-1],
+                             figsize=[10,10])
+    axes = np.expand_dims(axes, 0) if len(axes.shape) == 1 else axes
 
     for i, (label, qoi)  in enumerate(outputs.items()):
 
@@ -98,20 +105,25 @@ def plot_progress(X_u, batch, trained_model):
     xx_gen, yy_gen = np.meshgrid(np.linspace(*x_bounds, 100),
                          np.linspace(*y_bounds, 50))
     x = np.c_[xx_gen.ravel(), yy_gen.ravel()].astype('float32')
-    outputs = trained_model.generate(x, NUM_PREDICT_SAMPLES).numpy()
-    outputs = np.transpose(outputs, (2, 0, 1))
-    labels = ['u1', 'u2']
-    output_dict = {label: out.reshape(out.shape[0], *xx_gen.shape) \
-                for label, out in zip(labels, outputs)}
-    buf1 = plot_mean_std_contour(xx_gen, yy_gen, output_dict)
 
-    n_sens = xx.shape
-    zz = batch.reshape(-1, *n_sens, 2)
-    data = {
-       'u1': zz[:, :, :, 0],
-       'u2': zz[:, :, :, 1]
-    }
+    results = trained_model.generate(x, NUM_PREDICT_SAMPLES)
+    if not isinstance(results, tuple):
+        results = (results, ) # only u gen
 
-    buf2 = plot_samples(xx_gen, yy_gen, output_dict, xx, yy, data)
+    bufs = []
+    for res, labels in zip(results, (['u1', 'u2'], ['E'])):
+        outputs = np.transpose(res.numpy(), (2, 0, 1))
+        output_dict = {label: out.reshape(out.shape[0], *xx_gen.shape) \
+                    for label, out in zip(labels, outputs)}
+        bufs.append(plot_mean_std_contour(xx_gen, yy_gen, output_dict))
 
-    return (buf1, buf2)
+        n_sens = xx.shape
+        zz = batch.reshape(-1, *n_sens, 2)
+        data = {
+           'u1': zz[:, :, :, 0],
+           'u2': zz[:, :, :, 1]
+        }
+
+        bufs.append(plot_samples(xx_gen, yy_gen, output_dict, xx, yy, data))
+
+    return tuple(bufs)
