@@ -45,7 +45,8 @@ class Generator():
     """
 
     def __init__(self, input_shape, pde, boundary_conditions,
-                 optimizer, noise_sampler):
+                 optimizer, noise_sampler, gen_weight=1, bc_weight=1,
+                 pde_weight=1):
         """
         Parameters
         ----------
@@ -74,6 +75,10 @@ class Generator():
         self.noise_sampler = noise_sampler
         self.pde = pde
         self.boundary_conditions = boundary_conditions
+
+        self._gen_weight = gen_weight
+        self._bc_weight = bc_weight
+        self._pde_weight = pde_weight
 
     def __call__(self, gen_input, noise):
         u_pred = self.generator_u(tf.concat([gen_input, noise], axis=1))
@@ -131,6 +136,12 @@ class Generator():
             gen_loss, pde_loss, bc_loss = self._loss(fake_output, gen_tape,
                                                      X=X_f_g, u=generated_f_u,
                                                      E=generated_f_E)
+
+            # HACKZ: weight loss components
+            gen_loss *= self._gen_weight
+            pde_loss *= self._pde_weight
+            bc_loss *= self._bc_weight
+            # END HACKZ
 
             total_loss = gen_loss + pde_loss + bc_loss
 
