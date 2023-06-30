@@ -25,13 +25,16 @@ NOISE_DIM = int(sys.argv[3])
 GEN_ITERS = int(sys.argv[4])
 DISC_ITERS = int(sys.argv[5])
 LAMBDA = float(sys.argv[6]) # gradpen
+PDE_WEIGHT = float(sys.argv[7])
+BC_WEIGHT = float(sys.argv[8])
+LEARNING_RATE = float(sys.argv[9])
 
 PARENT_DIR = '/hpnobackup2/pleser/pigans'
-SUB_DIR = f'{TRAIN_DATA_FILE.stem}_b{BATCH_SIZE}_n{NOISE_DIM}_g{GEN_ITERS}_d{DISC_ITERS}_gp{LAMBDA}'
+SUB_DIR = f'{TRAIN_DATA_FILE.stem}_b{BATCH_SIZE}_n{NOISE_DIM}_g{GEN_ITERS}_d{DISC_ITERS}_gp{LAMBDA}_pw{PDE_WEIGHT:.2e}_bc{BC_WEIGHT:.2e}_lr{LEARNING_RATE:.2e}'
 
+DU_SCALE_FACTOR = 1/1000
 NUM_CHECKPOINTS = 20
-TRAINING_STEPS = 1000000 #50000
-LEARNING_RATE = 1e-4
+TRAINING_STEPS = 500000
 
 GEN_INPUT_SHAPE =  NOISE_DIM + 2
 
@@ -47,8 +50,10 @@ batched_dataset = dataset.batch(BATCH_SIZE, drop_remainder=True)
 
 #Initialize All PIGAN 
 noise_sampler = NoiseSampler(NOISE_DIM)
-pde = PDE()
-boundary_conditions = BoundaryConditions(bc_data, noise_sampler)
+pde = PDE(scale_factor=DU_SCALE_FACTOR)
+boundary_conditions = BoundaryConditions(bc_data,
+                                         noise_sampler,
+                                         DU_SCALE_FACTOR)
 
 generator_optimizer = tf.keras.optimizers.legacy.Adam(
                                                 learning_rate=LEARNING_RATE,
@@ -60,9 +65,12 @@ discriminator_optimizer = tf.keras.optimizers.legacy.Adam(
                                                 beta_2=0.9)
 
 generator = Generator(input_shape=GEN_INPUT_SHAPE, 
-                      pde=pde, boundary_conditions=boundary_conditions, 
+                      pde=pde,
+                      boundary_conditions=boundary_conditions, 
                       optimizer=generator_optimizer, 
-                      noise_sampler=noise_sampler)
+                      noise_sampler=noise_sampler,
+                      pde_weight=PDE_WEIGHT,
+                      bc_weight=BC_WEIGHT)
 
 discriminator = Discriminator(input_shape=DISC_INPUT_SHAPE, LAMBDA=LAMBDA, 
                               optimizer=discriminator_optimizer, 
