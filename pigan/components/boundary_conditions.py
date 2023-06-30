@@ -3,11 +3,13 @@ import tensorflow as tf
 
 class BoundaryConditions():
 
-    def __init__(self, boundary_conditions, noise_sampler):
+    def __init__(self, boundary_conditions, noise_sampler, scale_factor = 1):
 
         self.boundary_conditions = boundary_conditions
         self.noise_sampler = noise_sampler
         self.mse = tf.keras.losses.MeanSquaredError()
+
+        self._scale_factor = scale_factor
     
     def evaluate_loss(self, generator_u, generator_E, tape):
         '''
@@ -174,6 +176,11 @@ class BoundaryConditions():
         grad_uy = tape.gradient(gen_uy, xy_coords)
         dux_dx, dux_dy = tf.split(grad_ux, num_or_size_splits=2, axis=1)
         duy_dx, duy_dy = tf.split(grad_uy, num_or_size_splits=2, axis=1)
+
+        # HACK: rescale displacements
+        dux_dx, dux_dy = dux_dx * self._scale_factor, dux_dy* self._scale_factor
+        duy_dx, duy_dy = duy_dx * self._scale_factor, duy_dy* self._scale_factor
+        # END HACK
 
         return dux_dx, dux_dy, duy_dx, duy_dy
 
