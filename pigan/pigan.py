@@ -53,11 +53,6 @@ class PIGAN():
                     self.disc_log.append(
                         {'step': (step * discriminator_iterations) + i + 1,
                          'disc_loss': disc_loss.numpy()})
-                    with self._writer.as_default():
-                        tf.summary.scalar(
-                            'Discriminator Loss',
-                            disc_loss.numpy(), 
-                            step = (step * discriminator_iterations) + i + 1)
 
                 for i in range(generator_iterations):
                     gen_loss, pde_loss, bc_loss = \
@@ -69,20 +64,15 @@ class PIGAN():
                          'pde_loss': pde_loss.numpy(),
                          'bc_loss': bc_loss.numpy()})
 
-                    if i == 0:
-                        with self._writer.as_default():
-                            tf.summary.scalar(
-                                'Generator Loss',
-                                gen_loss.numpy(), 
-                                step = (step * generator_iterations) + i + 1)
-                            tf.summary.scalar(
-                                'PDE Loss',
-                                pde_loss.numpy(), 
-                                step = (step * generator_iterations) + i + 1)
-                            tf.summary.scalar(
-                                'BC Loss',
-                                bc_loss.numpy(), 
-                                step = (step * generator_iterations) + i + 1)
+            with self._writer.as_default():
+                tf.summary.scalar('Discriminator Loss',
+                                   disc_loss.numpy(), 
+                                   step = step + 1)
+                tf.summary.scalar('Generator Loss',
+                                   gen_loss.numpy(), 
+                                   step = step + 1)
+                tf.summary.scalar('PDE Loss', pde_loss.numpy(), step = step + 1)
+                tf.summary.scalar('BC Loss', bc_loss.numpy(), step = step + 1)
 
 
             if (step + 1) % 1000 == 0:
@@ -111,7 +101,9 @@ class PIGAN():
             self.time_log.append({'step': step + 1,
                                   'elapsed_time': elapsed_time})
             with self._writer.as_default():
-                tf.summary.scalar('Time Per Step', elapsed_time, step = step + 1)
+                 tf.summary.scalar('Time Per Step', elapsed_time,
+                                    step = step + 1)
+
 
         return step
 
