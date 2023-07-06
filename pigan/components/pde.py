@@ -48,7 +48,7 @@ class PDE():
         ux, uy = ux * self._scale_factor, uy * self._scale_factor
 
         ux_dx, ux_dy = ux_dx * self._scale_factor, ux_dy * self._scale_factor
-        uy_dx, uy_dy = uy_dx, uy_dy * self._scale_factor
+        uy_dx, uy_dy = uy_dx * self._scale_factor, uy_dy * self._scale_factor
                                      
         ux_dxx, ux_dxy = ux_dxx* self._scale_factor, ux_dxy * self._scale_factor
         ux_dyx, ux_dyy = ux_dyx* self._scale_factor, ux_dyy * self._scale_factor
