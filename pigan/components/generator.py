@@ -107,11 +107,21 @@ class Generator():
         pde_loss : tf.Tensor
             PDE constraint evaluation.
         """
-        num_pde = 100
+        num_pde = 500
 
         with tf.GradientTape(persistent=True) as gen_tape:
             X_u = inputs['X_u']
-            X_f = inputs['X_f']
+            # HACKZ
+            #X_f = inputs['X_f']
+            from scipy.stats import truncnorm
+            loc = 1.0
+            scale = 0.5
+            a, b = (0.25 - loc) / scale, (1.75 - loc) / scale
+            xdist = truncnorm(a, b, loc, scale)
+            x = xdist.rvs(batch_size)
+            y = np.random.uniform(0.25, 0.75, batch_size)
+            X_f = tf.convert_to_tensor(np.c_[x, y], dtype='float32')
+            # END HACKZ
 
             X_u_g = tf.tile(X_u, [batch_size, 1])
 
