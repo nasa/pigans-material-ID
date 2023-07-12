@@ -25,7 +25,7 @@ import part, material, section, assembly, step, interaction
 import regionToolset, displayGroupMdbToolset as dgm, mesh, load, job 
  
 
-def run(LX, LY, POISSON, PRESSURE, E_FIELD, THICKNESS=0.2):
+def run(X0, Y0, DX, DY, POISSON, PRESSURE, E_FIELD, THICKNESS=0.2):
     #---------------------------------------------------------------------------
     
     # Create a model
@@ -51,7 +51,7 @@ def run(LX, LY, POISSON, PRESSURE, E_FIELD, THICKNESS=0.2):
     mySketch.sketchOptions.setValues(viewStyle=AXISYM)
     mySketch.setPrimaryObject(option=STANDALONE)
     
-    mySketch.rectangle(point1=(0.0, 0.0), point2=(LX, LY))
+    mySketch.rectangle(point1=(X0, Y0), point2=(X0 + DX, Y0 + DY))
     
     myPlate = myModel.Part(name='Plate', 
         dimensionality=TWO_D_PLANAR, type=DEFORMABLE_BODY)
@@ -63,7 +63,7 @@ def run(LX, LY, POISSON, PRESSURE, E_FIELD, THICKNESS=0.2):
     
     # Create a set referring to the whole part
     
-    faces1 = myPlate.faces.findAt(((LX / 2, LY / 4, 0),),)
+    faces1 = myPlate.faces.findAt((((X0 + DX) / 2, (Y0 + DY) / 4, 0),),)
     myPlate.Set(faces=faces1, name='All')
     
    
@@ -114,7 +114,7 @@ def run(LX, LY, POISSON, PRESSURE, E_FIELD, THICKNESS=0.2):
     
     # Create a set for the load edge
     
-    e1 = myPlateInstance.edges.findAt((LX, LY / 2, 0))
+    e1 = myPlateInstance.edges.findAt(((X0 + DX), (Y0 + DY) / 2, 0))
     side1Edges1 = edges[e1.index:(e1.index+1)]
     myAssembly.Surface(side1Edges=side1Edges1, name='loadSurf')
     
@@ -287,8 +287,10 @@ if __name__ == '__main__':
     e_field = read_sample(SAMPLE_FILENAME)
 
     inputs = {
-        'LX': 1.5,
-        'LY': 0.5,
+        'X0': 0.25,
+        'Y0': 0.25,
+        'DX': 1.5,
+        'DY': 0.5,
         'POISSON': 0.3,
         'PRESSURE': -0.004,
         'E_FIELD': e_field}
