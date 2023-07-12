@@ -47,7 +47,8 @@ def run(X0, Y0, DX, DY, POISSON, PRESSURE, E_FIELD, THICKNESS=0.2):
     
     # Create a sketch for the base feature
     
-    mySketch = myModel.Sketch(name='plateProfile',sheetSize=max([LX, LY]) * 2.5)
+    mySketch = myModel.Sketch(name='plateProfile',
+                              sheetSize=max([X0 + DX, Y0 + DY]) * 2.5)
     mySketch.sketchOptions.setValues(viewStyle=AXISYM)
     mySketch.setPrimaryObject(option=STANDALONE)
     
