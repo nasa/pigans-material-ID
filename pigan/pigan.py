@@ -31,6 +31,10 @@ class PIGAN():
 
         if subdir:
             self.save_dir = parentdir / subdir
+            i = 0
+            while self.save_dir.exists():
+                self.save_dir = parentdir / (subdir + f'_{i + 1}')
+                i += 1
         else:
             start_time = time.strftime("%b_%d_%H_%M_%s/",time.gmtime())
             self.save_dir = parentdir / start_time
