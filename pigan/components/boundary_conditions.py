@@ -21,15 +21,16 @@ class BoundaryConditions():
         bc_right_loss = self._sigma_boundary_loss(generator_u,
                                                   generator_E, tape,
                                                   nu, num_bc)
-        bc_top_loss = self._top_boundary_loss(generator_u, generator_E,
-                                              tape, nu, num_bc)
-        bc_bottom_loss = self._bottom_boundary_loss(generator_u, 
-                                                    generator_E,
-                                                    tape, nu, num_bc)
+        #bc_top_loss = self._top_boundary_loss(generator_u, generator_E,
+        #                                      tape, nu, num_bc)
+        #bc_bottom_loss = self._bottom_boundary_loss(generator_u, 
+        #                                            generator_E,
+        #                                            tape, nu, num_bc)
         bc_left_loss = self._u_boundary_loss(generator_u,generator_E, tape, 
                                              nu, num_bc)
 
-        bc_loss = bc_right_loss + bc_top_loss + bc_bottom_loss + bc_left_loss
+        #bc_loss = bc_right_loss + bc_top_loss + bc_bottom_loss + bc_left_loss
+        bc_loss = bc_right_loss + bc_left_loss
 
         return bc_loss
 
@@ -93,13 +94,15 @@ class BoundaryConditions():
                                           generated_E_sigma_bc, nu)
         sigma_xx_loss = self.mse(sigma_bc, gen_sigma_xx)
 
-        #Compute zero shear stress (free) BC:
-        gen_sigma_xy = self._get_sigma_xy(dux_dy, duy_dx,
-                                          generated_E_sigma_bc, nu)
-        sigma_xy_loss = self.mse(zero_bc, gen_sigma_xy)
+        #HACKZ
+        ##Compute zero shear stress (free) BC:
+        #gen_sigma_xy = self._get_sigma_xy(dux_dy, duy_dx,
+        #                                  generated_E_sigma_bc, nu)
+        #sigma_xy_loss = self.mse(zero_bc, gen_sigma_xy)
 
-        bc_right_loss = sigma_xy_loss + sigma_xx_loss
-        return bc_right_loss
+        #bc_right_loss = sigma_xy_loss + sigma_xx_loss
+        #return bc_right_loss
+        return sigma_xx_loss
 
     def _top_boundary_loss(self, generator_u, generator_E, tape, nu,
                                  num_bc):
