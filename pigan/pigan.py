@@ -59,7 +59,7 @@ class PIGAN():
                          'disc_loss': disc_loss.numpy()})
 
                 for i in range(generator_iterations):
-                    gen_loss, pde_loss, bc_loss = \
+                    gen_loss, pde_loss, bc_loss, E_loss = \
                         self.generator.step(inputs, self.discriminator,
                                             batch_size=batch.shape[0])
                     self.gen_log.append(
@@ -77,6 +77,7 @@ class PIGAN():
                                    step = step + 1)
                 tf.summary.scalar('PDE Loss', pde_loss.numpy(), step = step + 1)
                 tf.summary.scalar('BC Loss', bc_loss.numpy(), step = step + 1)
+                tf.summary.scalar('E Penalty', E_loss.numpy(), step = step + 1)
 
 
             if (step + 1) % 1000 == 0:
