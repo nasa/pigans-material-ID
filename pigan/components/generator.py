@@ -46,7 +46,7 @@ class Generator():
 
     def __init__(self, input_shape, pde, boundary_conditions,
                  optimizer, noise_sampler, gen_weight=1, bc_weight=1,
-                 pde_weight=1):
+                 pde_weight=1, E_weight=1):
         """
         Parameters
         ----------
@@ -79,6 +79,7 @@ class Generator():
         self._gen_weight = gen_weight
         self._bc_weight = bc_weight
         self._pde_weight = pde_weight
+        self._E_weight = E_weight
 
     def __call__(self, gen_input, noise):
         u_pred = self.generator_u(tf.concat([gen_input, noise], axis=1))
@@ -107,7 +108,7 @@ class Generator():
         pde_loss : tf.Tensor
             PDE constraint evaluation.
         """
-        num_pde = 1000
+        num_pde = 2000
 
         with tf.GradientTape(persistent=True) as gen_tape:
             X_u = inputs['X_u']
@@ -143,17 +144,25 @@ class Generator():
             fake_output = discriminator.discriminator(generated_snapshots,
                                                       training=True)
 
-            gen_loss, pde_loss, bc_loss = self._loss(fake_output, gen_tape,
-                                                     X=X_f_g, u=generated_f_u,
-                                                     E=generated_f_E)
+            # HACKZ: add E penalty
+            #gen_loss, pde_loss, bc_loss = self._loss(fake_output, gen_tape,
+            #                                         X=X_f_g, u=generated_f_u,
+            #                                         E=generated_f_E)
+            gen_loss, pde_loss, bc_loss, E_loss = self._loss(fake_output,
+                                                             gen_tape,
+                                                             X=X_f_g,
+                                                             u=generated_f_u,
+                                                             E=generated_f_E)
+            # END HACKZ
 
             # HACKZ: weight loss components
             gen_loss *= self._gen_weight
             pde_loss *= self._pde_weight
             bc_loss *= self._bc_weight
+            E_loss *= self._E_weight
             # END HACKZ
 
-            total_loss = gen_loss + pde_loss + bc_loss
+            total_loss = gen_loss + pde_loss + bc_loss + E_loss # HACKZ E
 
         gradients_of_generators = gen_tape.gradient(total_loss,
                                          [self.generator_u.trainable_variables,
@@ -166,7 +175,7 @@ class Generator():
 
         del gen_tape
 
-        return gen_loss, pde_loss, bc_loss
+        return gen_loss, pde_loss, bc_loss, E_loss
 
     def _loss(self, fake_output, tape, **terms):
         """Calculates the loss for the generator based on Equation 2 from 
@@ -194,7 +203,10 @@ class Generator():
         pde_loss = self.pde.evaluate_loss(terms, tape)
         bc_loss = self.boundary_conditions.evaluate_loss(self.generator_u,
                                                     self.generator_E, tape)
-        return wgan_gen_loss, pde_loss, bc_loss
+        # HACKZ: penalize E < 0.5 (expecting > 2.0 for weld example)
+        E_loss = tf.reduce_mean(tf.nn.relu(-(terms['E'] - 0.5)))
+        # END HACKZ
+        return wgan_gen_loss, pde_loss, bc_loss, E_loss
 
     def _model(self, input_shape, dimensionality):
         """Creates a Sequential model (linear stack of layers).
