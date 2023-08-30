@@ -28,9 +28,10 @@ LAMBDA = float(sys.argv[6]) # gradpen
 PDE_WEIGHT = float(sys.argv[7])
 BC_WEIGHT = float(sys.argv[8])
 LEARNING_RATE = float(sys.argv[9])
+E_WEIGHT = float(sys.argv[10])
 
 PARENT_DIR = '/hpnobackup2/pleser/pigans'
-SUB_DIR = f'{TRAIN_DATA_FILE.stem}_b{BATCH_SIZE}_n{NOISE_DIM}_g{GEN_ITERS}_d{DISC_ITERS}_gp{LAMBDA}_pw{PDE_WEIGHT:.2e}_bc{BC_WEIGHT:.2e}_lr{LEARNING_RATE:.2e}'
+SUB_DIR = f'{TRAIN_DATA_FILE.stem}_b{BATCH_SIZE}_n{NOISE_DIM}_g{GEN_ITERS}_d{DISC_ITERS}_gp{LAMBDA}_pw{PDE_WEIGHT:.2e}_bc{BC_WEIGHT:.2e}_lr{LEARNING_RATE:.2e}_E{E_WEIGHT:.2e}'
 
 DU_SCALE_FACTOR = 1/1000
 NUM_CHECKPOINTS = 20
@@ -70,7 +71,8 @@ generator = Generator(input_shape=GEN_INPUT_SHAPE,
                       optimizer=generator_optimizer, 
                       noise_sampler=noise_sampler,
                       pde_weight=PDE_WEIGHT,
-                      bc_weight=BC_WEIGHT)
+                      bc_weight=BC_WEIGHT,
+                      E_weight=E_WEIGHT)
 
 discriminator = Discriminator(input_shape=DISC_INPUT_SHAPE, LAMBDA=LAMBDA, 
                               optimizer=discriminator_optimizer, 
