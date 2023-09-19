@@ -64,7 +64,7 @@ def run(X0, Y0, DX, DY, POISSON, PRESSURE, E_FIELD, THICKNESS=0.2):
     
     # Create a set referring to the whole part
     
-    faces1 = myPlate.faces.findAt((((X0 + DX) / 2, (Y0 + DY) / 4, 0),),)
+    faces1 = myPlate.faces.findAt(((X0 + DX / 2, Y0 + DY / 4, 0),),)
     myPlate.Set(faces=faces1, name='All')
     
    
@@ -102,20 +102,20 @@ def run(X0, Y0, DX, DY, POISSON, PRESSURE, E_FIELD, THICKNESS=0.2):
     # Create a set for the edge to be fixed in X
     
     edges = myPlateInstance.edges
-    e1 = myPlateInstance.edges.findAt((0, LY / 2, 0))
+    e1 = myPlateInstance.edges.findAt((X0, Y0 + DY / 2, 0))
     edges1 = edges[e1.index:(e1.index+1)]
     myAssembly.Set(edges=edges1, name='fixedEdge')
     
     # Create a set for the point to be fixed in Y
     
     verts1 = myPlateInstance.vertices
-    vmp = myPlateInstance.vertices.findAt((0, 0, 0))
+    vmp = myPlateInstance.vertices.findAt((X0, Y0, 0))
     myPoint = verts1[vmp.index:(vmp.index+1)]
     myAssembly.Set(vertices=myPoint, name='fixedPt')
     
     # Create a set for the load edge
     
-    e1 = myPlateInstance.edges.findAt(((X0 + DX), (Y0 + DY) / 2, 0))
+    e1 = myPlateInstance.edges.findAt((X0 + DX, Y0 + DY / 2, 0))
     side1Edges1 = edges[e1.index:(e1.index+1)]
     myAssembly.Surface(side1Edges=side1Edges1, name='loadSurf')
     
