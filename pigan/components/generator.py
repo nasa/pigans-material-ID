@@ -108,7 +108,7 @@ class Generator():
         pde_loss : tf.Tensor
             PDE constraint evaluation.
         """
-        num_pde = 2000
+        num_colloc = 10000
 
         with tf.GradientTape(persistent=True) as gen_tape:
             X_u = inputs['X_u']
@@ -119,22 +119,26 @@ class Generator():
             scale = 0.5
             a, b = (0.25 - loc) / scale, (1.75 - loc) / scale
             xdist = truncnorm(a, b, loc, scale)
-            x = xdist.rvs(batch_size)
-            y = np.random.uniform(0.25, 0.75, batch_size)
+            x = xdist.rvs(num_colloc)
+            y = np.random.uniform(0.25, 0.75, num_colloc)
             X_f = tf.convert_to_tensor(np.c_[x, y], dtype='float32')
             # END HACKZ
 
             X_u_g = tf.tile(X_u, [batch_size, 1])
 
             noise_u = self.noise_sampler.sample_noise(X_u.shape[0], batch_size)
-            noise_f = self.noise_sampler.sample_noise(X_f.shape[0], num_pde)
+            # HACKZ: 1 sensor per noise sample
+            #noise_f = self.noise_sampler.sample_noise(X_f.shape[0], num_pde)
+            noise_f = self.noise_sampler.sample_noise(1, num_colloc)
 
             u_inputs = tf.concat([X_u_g, noise_u], axis=1)
             generated_u = self.generator_u(u_inputs, training=True)
             generated_snapshots = tf.reshape(generated_u, [batch_size, -1])
 
 
-            X_f_g = tf.tile(X_f, [num_pde, 1])
+            #X_f_g = tf.tile(X_f, [num_pde, 1])
+            X_f_g = X_f
+            # END HACKZ
             gen_tape.watch(X_f_g)
             u_f_inputs = tf.concat([X_f_g, noise_f], axis=1)
             generated_f_u = self.generator_u(u_f_inputs, training=True)
@@ -203,8 +207,8 @@ class Generator():
         pde_loss = self.pde.evaluate_loss(terms, tape)
         bc_loss = self.boundary_conditions.evaluate_loss(self.generator_u,
                                                     self.generator_E, tape)
-        # HACKZ: penalize E < 0.5 (expecting > 2.0 for weld example)
-        E_loss = tf.reduce_mean(tf.nn.relu(-(terms['E'] - 0.5)))
+        # HACKZ: penalize E < 0.1 (expecting > 2.0 for weld example)
+        E_loss = tf.reduce_mean(tf.nn.relu(-(terms['E'] - 0.1)))
         # END HACKZ
         return wgan_gen_loss, pde_loss, bc_loss, E_loss
 
