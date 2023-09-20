@@ -59,41 +59,38 @@ class PIGAN():
                          'disc_loss': disc_loss.numpy()})
 
                 for i in range(generator_iterations):
-                    gen_loss, pde_loss, bc_loss, E_loss = \
-                        self.generator.step(inputs, self.discriminator,
-                                            batch_size=batch.shape[0])
-                    self.gen_log.append(
-                        {'step': (step * generator_iterations) + i + 1,
-                         'gen_loss': gen_loss.numpy(),
-                         'pde_loss': pde_loss.numpy(),
-                         'bc_loss': bc_loss.numpy()})
+                    gen_losses = self.generator.step(inputs, self.discriminator,
+                                                     batch_size=batch.shape[0])
+                    #self.gen_log.append(
+                    #    {'step': (step * generator_iterations) + i + 1,
+                    #     'gen_loss': gen_loss.numpy(),
+                    #     'pde_loss': pde_loss.numpy(),
+                    #     'bc_loss': bc_loss.numpy()})
+
+            losses = [disc_loss] + list(gen_losses)
+            loss_names = ['Discriminator Loss', 'Generator Loss', 'PDE Loss',
+                          'BC Loss', 'Phys. Loss', 'E Loss',
+                          'Wtd Generator Loss', 'Wtd PDE Loss', 'Wtd BC Loss',
+                          'Wtd Phys. Loss']
 
             with self._writer.as_default():
-                tf.summary.scalar('Discriminator Loss',
-                                   disc_loss.numpy(), 
-                                   step = step + 1)
-                tf.summary.scalar('Generator Loss',
-                                   gen_loss.numpy(), 
-                                   step = step + 1)
-                tf.summary.scalar('PDE Loss', pde_loss.numpy(), step = step + 1)
-                tf.summary.scalar('BC Loss', bc_loss.numpy(), step = step + 1)
-                tf.summary.scalar('E Penalty', E_loss.numpy(), step = step + 1)
-
+                for name, loss in zip(loss_names, losses):
+                    tf.summary.scalar(name, loss.numpy(), step = step + 1)
 
             if (step + 1) % 1000 == 0:
-                elapsed_time = time.time() - train_start_time
-                sec_per_step = elapsed_time / step
-                mins_left = ((training_steps - step) * sec_per_step)
-                tf.print("\nStep # ", step, "/", training_steps,
-                         output_stream=sys.stdout)
-                tf.print("Current time:", elapsed_time, " time left:",
-                         mins_left, output_stream=sys.stdout)
-                tf.print("Discriminator Loss: ", disc_loss,
-                         output_stream=sys.stdout)
-                tf.print("Generator Loss: ", gen_loss,
-                         output_stream=sys.stdout)
-                tf.print("PDE Loss: ", pde_loss, output_stream=sys.stdout)
-                tf.print("BC Loss: ", bc_loss, output_stream=sys.stdout)
+                #elapsed_time = time.time() - train_start_time
+                #sec_per_step = elapsed_time / step
+                #mins_left = ((training_steps - step) * sec_per_step)
+                #tf.print("\nStep # ", step, "/", training_steps,
+                #         output_stream=sys.stdout)
+                #tf.print("Current time:", elapsed_time, " time left:",
+                #         mins_left, output_stream=sys.stdout)
+                #tf.print("Discriminator Loss: ", disc_loss,
+                #         output_stream=sys.stdout)
+                #tf.print("Generator Loss: ", gen_loss,
+                #         output_stream=sys.stdout)
+                #tf.print("PDE Loss: ", pde_loss, output_stream=sys.stdout)
+                #tf.print("BC Loss: ", bc_loss, output_stream=sys.stdout)
 
                 bufs = plot_progress(inputs['X_u'], batch, self.generator)
                 for i, b in enumerate(bufs):
@@ -134,15 +131,15 @@ class PIGAN():
             settings_file.attrs['LAMBDA'] = self.discriminator.LAMBDA
             settings_file.attrs['learning_rate'] = self.generator.gen_opt.learning_rate.numpy()
 
-        if logs:
-            log_dir = self.save_dir.joinpath('logs/')
-            log_dir.mkdir(parents=True, exist_ok=True)
-            save_log(self.disc_log, 'disc_loss_per_step',
-                     self.disc_log[0].keys(), log_dir)
-            save_log(self.gen_log, 'gen_loss_per_step', self.gen_log[0].keys(),
-                     log_dir)
-            save_log(self.time_log, 'time_per_step', self.time_log[0].keys(),
-                     log_dir)
+        #if logs:
+        #    log_dir = self.save_dir.joinpath('logs/')
+        #    log_dir.mkdir(parents=True, exist_ok=True)
+        #    save_log(self.disc_log, 'disc_loss_per_step',
+        #             self.disc_log[0].keys(), log_dir)
+        #    save_log(self.gen_log, 'gen_loss_per_step', self.gen_log[0].keys(),
+        #             log_dir)
+        #    save_log(self.time_log, 'time_per_step', self.time_log[0].keys(),
+        #             log_dir)
 
     def generate(self, test_data, num_samples, save_results):
         """Calls the generate function of the PIGAN's generator to generate a

@@ -160,27 +160,54 @@ class Generator():
             # END HACKZ
 
             # HACKZ: weight loss components
-            gen_loss *= self._gen_weight
-            pde_loss *= self._pde_weight
-            bc_loss *= self._bc_weight
-            E_loss *= self._E_weight
+            #gen_loss *= self._gen_weight
+            #pde_loss *= self._pde_weight
+            #bc_loss *= self._bc_weight
+            #E_loss *= self._E_weight
             # END HACKZ
 
-            total_loss = gen_loss + pde_loss + bc_loss + E_loss # HACKZ E
+            pde_wt, bc_wt = self._auto_compute_weights(pde_loss, bc_loss)
+            wtd_pde_loss = pde_loss * pde_wt
+            wtd_bc_loss = bc_loss * bc_wt
+            
+            physics_loss = wtd_pde_loss + wtd_bc_loss + E_loss # HACKZ separate
 
-        gradients_of_generators = gen_tape.gradient(total_loss,
-                                         [self.generator_u.trainable_variables,
-                                          self.generator_E.trainable_variables])
+            gen_wt, phys_wt = self._auto_compute_weights(gen_loss, physics_loss)
+            wtd_gen_loss = gen_loss * gen_wt
+            wtd_physics_loss = physics_loss * phys_wt
 
-        self.gen_opt.apply_gradients(zip(gradients_of_generators[0],
+            total_loss = wtd_gen_loss + wtd_physics_loss
+
+        # HACKZ: separate loss/gradients
+        #gradients_of_generators = gen_tape.gradient(total_loss,
+        #                                 [self.generator_u.trainable_variables,
+        #                                  self.generator_E.trainable_variables])
+
+        #self.gen_opt.apply_gradients(zip(gradients_of_generators[0],
+        #                                 self.generator_u.trainable_variables))
+        #self.gen_opt.apply_gradients(zip(gradients_of_generators[1],
+        #                                 self.generator_E.trainable_variables))
+
+        u_grad = gen_tape.gradient(total_loss,
+                                   self.generator_u.trainable_variables)
+        E_grad = gen_tape.gradient(physics_loss,
+                                   self.generator_E.trainable_variables)
+
+        self.gen_opt.apply_gradients(zip(u_grad,
                                          self.generator_u.trainable_variables))
-        self.gen_opt.apply_gradients(zip(gradients_of_generators[1],
+        self.gen_opt.apply_gradients(zip(E_grad,
                                          self.generator_E.trainable_variables))
+        # END HACKZ
 
         del gen_tape
 
-        return gen_loss, pde_loss, bc_loss, E_loss
+        return (gen_loss, pde_loss, bc_loss, physics_loss, E_loss,
+                wtd_gen_loss, wtd_pde_loss, wtd_bc_loss, wtd_physics_loss)
 
+    def _auto_compute_weights(self, *args):
+        target = sum(args) / len(args)
+        return (target / arg for arg in args)
+        
     def _loss(self, fake_output, tape, **terms):
         """Calculates the loss for the generator based on Equation 2 from 
         "Improved Training of Wasserstein GANs" by Gulrajani et al. and applies
