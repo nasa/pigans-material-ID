@@ -26,11 +26,11 @@ class BoundaryConditions():
         #bc_bottom_loss = self._bottom_boundary_loss(generator_u, 
         #                                            generator_E,
         #                                            tape, nu, num_bc)
-        bc_left_loss = self._u_boundary_loss(generator_u,generator_E, tape, 
-                                             nu, num_bc)
+        #bc_left_loss = self._u_boundary_loss(generator_u,generator_E, tape, 
+        #                                     nu, num_bc)
 
         #bc_loss = bc_right_loss + bc_top_loss + bc_bottom_loss + bc_left_loss
-        bc_loss = bc_right_loss + bc_left_loss
+        bc_loss = bc_right_loss #+ bc_left_loss
 
         return bc_loss
 

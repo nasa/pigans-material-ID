@@ -188,7 +188,7 @@ class Generator():
         #self.gen_opt.apply_gradients(zip(gradients_of_generators[1],
         #                                 self.generator_E.trainable_variables))
 
-        u_grad = gen_tape.gradient(total_loss,
+        u_grad = gen_tape.gradient(gen_loss,
                                    self.generator_u.trainable_variables)
         E_grad = gen_tape.gradient(physics_loss,
                                    self.generator_E.trainable_variables)
