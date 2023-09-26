@@ -76,10 +76,12 @@ class Generator():
         self.pde = pde
         self.boundary_conditions = boundary_conditions
 
+        # HACKZ
         self._gen_weight = gen_weight
         self._bc_weight = bc_weight
         self._pde_weight = pde_weight
         self._E_weight = E_weight
+        # END HACKZ
 
     def __call__(self, gen_input, noise):
         u_pred = self.generator_u(tf.concat([gen_input, noise], axis=1))
@@ -88,7 +90,7 @@ class Generator():
         return u_pred, E_pred
 
     @tf.function
-    def step(self, inputs, discriminator, batch_size):
+    def step(self, inputs, discriminator, batch_size, train_u=True):
         """Generator training step.
 
         Parameters
@@ -188,13 +190,14 @@ class Generator():
         #self.gen_opt.apply_gradients(zip(gradients_of_generators[1],
         #                                 self.generator_E.trainable_variables))
 
-        u_grad = gen_tape.gradient(gen_loss,
-                                   self.generator_u.trainable_variables)
+        if train_u:
+            u_grad = gen_tape.gradient(gen_loss,
+                                       self.generator_u.trainable_variables)
+            self.gen_opt.apply_gradients(zip(u_grad,
+                                         self.generator_u.trainable_variables))
+
         E_grad = gen_tape.gradient(physics_loss,
                                    self.generator_E.trainable_variables)
-
-        self.gen_opt.apply_gradients(zip(u_grad,
-                                         self.generator_u.trainable_variables))
         self.gen_opt.apply_gradients(zip(E_grad,
                                          self.generator_E.trainable_variables))
         # END HACKZ

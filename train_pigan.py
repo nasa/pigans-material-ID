@@ -89,7 +89,8 @@ for i in range(NUM_CHECKPOINTS):
                        training_steps=training_steps_per_chkpt,
                        generator_iterations=GEN_ITERS, 
                        discriminator_iterations=DISC_ITERS,
-                       step=step + 1)
+                       step=step + 1,
+                       max_u_train_steps=2e5)
 
     pigan.save(subdir='chkpt{:04}'.format(i))
 pigan.save()

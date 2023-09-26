@@ -58,7 +58,7 @@ class Discriminator():
         pass
 
     @tf.function
-    def step(self, inputs, snapshot_batch, generator, batch_size):
+    def step(self, inputs, snapshot_batch, generator, batch_size, train_u=True):
         """Discriminator training step.
 
         Parameters
@@ -103,9 +103,10 @@ class Discriminator():
                                    generated_snapshots, batch_size)
 
         gradients_of_discriminator = disc_tape.gradient(disc_loss,
-                                                        self.discriminator.trainable_variables)
-        self.disc_opt.apply_gradients(zip(gradients_of_discriminator,
-                                          self.discriminator.trainable_variables))
+                                        self.discriminator.trainable_variables)
+        if train_u:
+            self.disc_opt.apply_gradients(zip(gradients_of_discriminator,
+                                        self.discriminator.trainable_variables))
 
         return disc_loss
 

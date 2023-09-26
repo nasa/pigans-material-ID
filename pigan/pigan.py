@@ -43,24 +43,27 @@ class PIGAN():
         self._writer = tf.summary.create_file_writer(str(writer_path))
 
     def train(self, inputs, dataset, training_steps, generator_iterations, 
-              discriminator_iterations, step=0):
+              discriminator_iterations, step=0, max_u_train_steps=1e4):
         
         train_start_time = time.time()
         for step in tqdm(range(step, step + training_steps), desc='Training'):
+            train_u = step < max_u_train_steps
             start = time.time()
             for batch in dataset:
                 batch_size = batch.shape[0]
                 for i in range(discriminator_iterations):
                     disc_loss = self.discriminator.step(inputs, batch,
                                                         self.generator,
-                                                        batch_size=batch_size)
-                    self.disc_log.append(
-                        {'step': (step * discriminator_iterations) + i + 1,
-                         'disc_loss': disc_loss.numpy()})
+                                                        batch_size=batch_size,
+                                                        train_u=train_u)
+                    #self.disc_log.append(
+                    #    {'step': (step * discriminator_iterations) + i + 1,
+                    #     'disc_loss': disc_loss.numpy()})
 
                 for i in range(generator_iterations):
                     gen_losses = self.generator.step(inputs, self.discriminator,
-                                                     batch_size=batch.shape[0])
+                                                     batch_size=batch.shape[0],
+                                                     train_u=train_u)
                     #self.gen_log.append(
                     #    {'step': (step * generator_iterations) + i + 1,
                     #     'gen_loss': gen_loss.numpy(),
