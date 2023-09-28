@@ -46,7 +46,7 @@ class Generator():
 
     def __init__(self, input_shape, pde, boundary_conditions,
                  optimizer, noise_sampler, gen_weight=1, bc_weight=1,
-                 pde_weight=1, E_weight=1):
+                 pde_weight=1, E_weight=1, estimate_noise=False):
         """
         Parameters
         ----------
@@ -81,6 +81,11 @@ class Generator():
         self._bc_weight = bc_weight
         self._pde_weight = pde_weight
         self._E_weight = E_weight
+
+        self._measurement_noise = None
+        if estimate_noise:
+            self._measurement_noise = tf.Variable(initial_value=0.0,
+                                                  trainable=True)
         # END HACKZ
 
     def __call__(self, gen_input, noise):
@@ -137,6 +142,12 @@ class Generator():
             generated_u = self.generator_u(u_inputs, training=True)
             generated_snapshots = tf.reshape(generated_u, [batch_size, -1])
 
+            if self._measurement_noise is not None:
+                noise = tf.random.normal(generated_snapshots.shape)
+                generated_snapshots += noise * self._measurement_noise
+
+            fake_output = discriminator.discriminator(generated_snapshots,
+                                                      training=True)
 
             #X_f_g = tf.tile(X_f, [num_pde, 1])
             X_f_g = X_f
@@ -146,9 +157,6 @@ class Generator():
             generated_f_u = self.generator_u(u_f_inputs, training=True)
             E_f_inputs = tf.concat([X_f_g, noise_f], axis=1)
             generated_f_E = self.generator_E(E_f_inputs , training=True)
-
-            fake_output = discriminator.discriminator(generated_snapshots,
-                                                      training=True)
 
             # HACKZ: add E penalty
             #gen_loss, pde_loss, bc_loss = self._loss(fake_output, gen_tape,
@@ -196,6 +204,10 @@ class Generator():
             self.gen_opt.apply_gradients(zip(u_grad,
                                          self.generator_u.trainable_variables))
 
+        if self._measurement_noise is not None:
+            n_grad = gen_tape.gradient(total_loss, self._measurement_noise)
+            self.gen_opt.apply_gradients([(n_grad, self._measurement_noise)])
+
         E_grad = gen_tape.gradient(physics_loss,
                                    self.generator_E.trainable_variables)
         self.gen_opt.apply_gradients(zip(E_grad,
@@ -205,7 +217,8 @@ class Generator():
         del gen_tape
 
         return (gen_loss, pde_loss, bc_loss, physics_loss, E_loss,
-                wtd_gen_loss, wtd_pde_loss, wtd_bc_loss, wtd_physics_loss)
+                wtd_gen_loss, wtd_pde_loss, wtd_bc_loss, wtd_physics_loss,
+                self._measurement_noise)
 
     def _auto_compute_weights(self, *args):
         target = sum(args) / len(args)

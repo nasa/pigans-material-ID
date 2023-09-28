@@ -53,9 +53,9 @@ class PIGAN():
                 batch_size = batch.shape[0]
                 for i in range(discriminator_iterations):
                     disc_loss = self.discriminator.step(inputs, batch,
-                                                        self.generator,
-                                                        batch_size=batch_size,
-                                                        train_u=train_u)
+                                                       self.generator,
+                                                       batch_size=batch_size,
+                                                       train_u=train_u)
                     #self.disc_log.append(
                     #    {'step': (step * discriminator_iterations) + i + 1,
                     #     'disc_loss': disc_loss.numpy()})
@@ -74,11 +74,12 @@ class PIGAN():
             loss_names = ['Discriminator Loss', 'Generator Loss', 'PDE Loss',
                           'BC Loss', 'Phys. Loss', 'E Loss',
                           'Wtd Generator Loss', 'Wtd PDE Loss', 'Wtd BC Loss',
-                          'Wtd Phys. Loss']
+                          'Wtd Phys. Loss', 'Meas. Noise']
 
             with self._writer.as_default():
                 for name, loss in zip(loss_names, losses):
-                    tf.summary.scalar(name, loss.numpy(), step = step + 1)
+                    if loss is not None:
+                        tf.summary.scalar(name, loss.numpy(), step = step + 1)
 
             if (step + 1) % 1000 == 0:
                 #elapsed_time = time.time() - train_start_time

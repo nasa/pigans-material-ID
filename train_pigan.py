@@ -36,6 +36,8 @@ SUB_DIR = f'{TRAIN_DATA_FILE.stem}_b{BATCH_SIZE}_n{NOISE_DIM}_g{GEN_ITERS}_d{DIS
 DU_SCALE_FACTOR = 1/1000
 NUM_CHECKPOINTS = 20
 TRAINING_STEPS = 1000000
+MAX_U_TRAIN_STEPS = 2E6
+ESTIMATE_NOISE = True
 
 GEN_INPUT_SHAPE =  NOISE_DIM + 2
 
@@ -72,7 +74,8 @@ generator = Generator(input_shape=GEN_INPUT_SHAPE,
                       noise_sampler=noise_sampler,
                       pde_weight=PDE_WEIGHT,
                       bc_weight=BC_WEIGHT,
-                      E_weight=E_WEIGHT)
+                      E_weight=E_WEIGHT,
+                      estimate_noise=ESTIMATE_NOISE)
 
 discriminator = Discriminator(input_shape=DISC_INPUT_SHAPE, LAMBDA=LAMBDA, 
                               optimizer=discriminator_optimizer, 
@@ -90,7 +93,7 @@ for i in range(NUM_CHECKPOINTS):
                        generator_iterations=GEN_ITERS, 
                        discriminator_iterations=DISC_ITERS,
                        step=step + 1,
-                       max_u_train_steps=2e5)
+                       max_u_train_steps=MAX_U_TRAIN_STEPS)
 
     pigan.save(subdir='chkpt{:04}'.format(i))
 pigan.save()
